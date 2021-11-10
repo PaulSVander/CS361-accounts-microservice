@@ -26,5 +26,8 @@ connectedSocket.send(y)
 
 # receive data from the server and decoding to get the string.
 print(connectedSocket.recv(1024).decode())
+print(connectedSocket.recv(1024).decode())
+print(connectedSocket.recv(1024).decode())
+
 # close the connection
 connectedSocket.close()
