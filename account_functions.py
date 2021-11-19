@@ -1,14 +1,9 @@
-from socket import *
 import json
 
-serverPort = 12345
-serverSocket = socket(AF_INET, SOCK_STREAM)
-
-serverSocket.bind(('', serverPort))
-serverSocket.listen(1)
 
 accounts = {}
-
+encoded_json = None
+response_header = None
 
 def route_request(request):
     """
@@ -19,8 +14,6 @@ def route_request(request):
         create_account(request)
     elif request["action"] == "login":
         login(request)
-    elif request["action"] == "logout":
-        logout(request)
     elif request["action"] == "edit":
         edit(request)
     elif request["action"] == "retrieve":
@@ -42,27 +35,23 @@ def create_account(request):
             username = request["username"]
     except KeyError:
         error("Username required")
-        return
 
     if username in accounts:
         error("Username already in use")
-        return
 
     try:
         if request["password"]:
             password = request["password"]
     except KeyError:
         error("password required")
-        return
 
     try:
         if request["description"]:
             description = request["description"]
     except KeyError:
         error("description required")
-        return
 
-    accounts[username] = {"password": password, "description": description, "logged_in": True}
+    accounts[username] = {"password": password, "description": description}
 
     build_response({"0": "account created"})
 
@@ -83,21 +72,17 @@ def login(request):
             username = request["username"]
     except KeyError:
         error("username required")
-        return
 
     if username not in accounts:
-        error("invalid user")
-        return
+        error("Username does not exist")
 
     try:
         if request["password"]:
             password = request["password"]
     except KeyError:
         error("password required")
-        return
 
-    if accounts[username]["password"] == password:
-        accounts[username]["logged_in"] = True
+    if accounts[username][password] == password:
         build_response({"0": "logged in"})
     else:
         build_response({"2": "incorrect password"})
@@ -105,42 +90,11 @@ def login(request):
     return
 
 
-def logout(request):
-    """
-    Logs out the user specified in the request. Verifies existence of username and matching password
-    for that username.
-
-    Requires: username, password
-    returns: 0 with "logged out" msg on success, 1 with "invalid user" msg, 2 with "incorrect password" msg
-            ex. {"0": "logged in"}
-    """
-    try:
-        if request["username"]:
-            username = request["username"]
-    except KeyError:
-        error("username required")
-
-    if username not in accounts:
-        error("invalid user")
-
-    try:
-        if request["password"]:
-            password = request["password"]
-    except KeyError:
-        error("password required")
-
-    if accounts[username]["password"] == password:
-        accounts[username]["logged_in"] = False
-        build_response({"0": "logged Out"})
-    else:
-        build_response({"2": "incorrect password"})
-
-
 def edit(request):
     """
     Edits the description field for the specified user.
 
-    Requires: username, new_description; User must be logged in
+    Requires: username, new_description
     returns: 0 with "updated description" msg on success, 1 with "invalid user" msg
             ex. {"0": "updated description"}
     """
@@ -156,11 +110,8 @@ def edit(request):
     except KeyError:
         error("new description required")
 
-    if accounts[username]["logged_in"]:
-        accounts[username]["description"] = new_description
-        build_response({"0": "updated description"})
-    else:
-        error("user not logged in")
+    accounts[username]["description"] = new_description
+
 
     return
 
@@ -169,7 +120,7 @@ def retrieve(request):
     """
     Returns all account information for the specified user. Verifies existence of user.
 
-    requires: username; User must be logged in
+    requires: username
     Returns: on success returns account as JSON ex. {"username":{username}, "password":{password},
             "description":{description}"
             1 with "invalid user" msg on failure
@@ -181,10 +132,7 @@ def retrieve(request):
     except KeyError:
         error("username required")
 
-    if accounts[username]["logged_in"]:
-        build_response(accounts[username])
-    else:
-        error("user not logged in")
+    build_response(accounts[username])
 
     return
 
@@ -217,24 +165,3 @@ def build_response(json_response):
     send_response(response_header, encoded_json)
 
     return
-
-
-def send_response(response_header, response_body):
-    connectionSocket.send(response_header)
-    connectionSocket.send(response_body)
-
-    return
-
-
-while True:
-    connectionSocket, addr = serverSocket.accept()
-
-    # We expect the first 1024 bytes to tell us how long the next message will be
-    msg_len = connectionSocket.recv(1024).decode('utf-8')
-    msg_len = int(msg_len)
-
-    # We receive the number of bytes we were told to expect (msg_len)
-    receivedRaw = connectionSocket.recv(msg_len).decode('utf-8')
-    received = json.loads(receivedRaw)
-
-    route_request(received)

@@ -12,10 +12,9 @@ port = 12345
 connectedSocket.connect(('127.0.0.1', port))
 
 x = {
-    "action": "create",
+    "action": "edit",
     "username": "Bobby",
-    "password": "123",
-    "description": "Bobs around"
+    "new_description": "A different description"
 }
 y = json.dumps(x)
 y = y.encode('utf-8')
