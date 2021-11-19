@@ -13,7 +13,7 @@ connectedSocket.connect(('127.0.0.1', port))
 
 a = {
     "action": "retrieve",
-    "userToken": "0"
+    "username": "Bobby"
 }
 b = json.dumps(a)
 b = b.encode('utf-8')
