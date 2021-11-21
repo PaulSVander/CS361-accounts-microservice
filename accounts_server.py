@@ -16,14 +16,24 @@ def route_request(request):
     the request type
     """
     if request["action"] == "create":
+        print("\tRECEIVED request to CREATE account")
+        print("\t\t", request, "\n")
         create_account(request)
     elif request["action"] == "login":
+        print("\tRECEIVED request to LOG IN to account")
+        print("\t\t", request, "\n")
         login(request)
     elif request["action"] == "logout":
+        print("\tRECEIVED request to LOG OUT of account")
+        print("\t\t", request, "\n")
         logout(request)
     elif request["action"] == "edit":
+        print("\tRECEIVED request to EDIT account")
+        print("\t\t", request, "\n")
         edit(request)
     elif request["action"] == "retrieve":
+        print("\tRECEIVED request to RETRIEVE account")
+        print("\t\t", request, "\n")
         retrieve(request)
 
     return
@@ -110,8 +120,8 @@ def logout(request):
     Logs out the user specified in the request. Verifies existence of username and matching password
     for that username.
 
-    Requires: username, password
-    returns: 0 with "logged out" msg on success, 1 with "invalid user" msg, 2 with "incorrect password" msg
+    Requires: username
+    returns: 0 with "logged out" msg on success, 1 with "invalid user" msg
             ex. {"0": "logged in"}
     """
     try:
@@ -122,18 +132,9 @@ def logout(request):
 
     if username not in accounts:
         error("invalid user")
-
-    try:
-        if request["password"]:
-            password = request["password"]
-    except KeyError:
-        error("password required")
-
-    if accounts[username]["password"] == password:
+    else:
         accounts[username]["logged_in"] = False
         build_response({"0": "logged Out"})
-    else:
-        build_response({"2": "incorrect password"})
 
 
 def edit(request):
@@ -213,7 +214,7 @@ def build_response(json_response):
     """
     encoded_json = json.dumps(json_response).encode('utf-8')
     response_header = format_response_header(encoded_json)
-
+    print("\tSENDING RESPONSE: \n\t\t", json_response)
     send_response(response_header, encoded_json)
 
     return
@@ -227,6 +228,7 @@ def send_response(response_header, response_body):
 
 
 while True:
+    print("\nServer waiting for message...")
     connectionSocket, addr = serverSocket.accept()
 
     # We expect the first 1024 bytes to tell us how long the next message will be
@@ -236,5 +238,4 @@ while True:
     # We receive the number of bytes we were told to expect (msg_len)
     receivedRaw = connectionSocket.recv(msg_len).decode('utf-8')
     received = json.loads(receivedRaw)
-
     route_request(received)

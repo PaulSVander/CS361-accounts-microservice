@@ -14,7 +14,6 @@ connectedSocket.connect(('127.0.0.1', port))
 x = {
     "action": "logout",
     "username": "Bobby",
-    "password": "123",
 }
 y = json.dumps(x)
 y = y.encode('utf-8')
